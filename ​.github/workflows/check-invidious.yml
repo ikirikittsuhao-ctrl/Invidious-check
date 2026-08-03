@@ -1,0 +1,38 @@
+name: Check Invidious Instances
+
+on:
+  schedule:
+    - cron: '0 */1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run health check script
+        run: |
+          node .github/scripts/check.js
+
+      - name: Commit and push results
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add lists/
+          
+          if git diff --staged --quiet; then
+            echo "No changes in status."
+          else
+            git commit -m "chore: update invidious instances status [skip ci]"
+            git push
+          fi
